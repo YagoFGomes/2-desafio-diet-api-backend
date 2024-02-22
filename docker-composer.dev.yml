@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  postgres:
+    container_name: diet-api 
+    image: postgres
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: docker
+      POSTGRES_DB: diet-pg
+      PGDATA: /data/postgres
+    volumes:
+      - ./data/pg:/data/postgres
+  
+  postgres-test:
+    container_name: diet-pg-test
+    image: postgres
+    ports:
+      - 5433:5432
+    environment:
+      POSTGRES_USER: postgres-test
+      POSTGRES_PASSWORD: docker-test
+      POSTGRES_DB: diet-pg-test
+      PGDATA: /data/postgres-test
+    volumes:
+      - ./data/pg-test:/data/postgres-test

@@ -1,0 +1,6 @@
+node_modules
+build
+.env
+.env.test
+data
+annotations.md
