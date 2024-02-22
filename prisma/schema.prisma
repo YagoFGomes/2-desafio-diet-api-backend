@@ -12,3 +12,25 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+enum Gender {
+  men
+  woman
+}
+
+model User {
+  id           String @id @default(uuid())
+  username     String @unique
+  password     String
+  gender       Gender
+  profileImage String
+}
+
+model Meals {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  inDiet      Boolean  @map("in_diet")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+}

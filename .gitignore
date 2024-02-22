@@ -1,6 +1,16 @@
+# Statics
 node_modules
 build
+
+# Enviroments
 .env
 .env.test
+
+# Database
 data
+
+# Annotations
 annotations.md
+
+# Static Images
+src/uploads/profile-images/*
