@@ -1,12 +1,15 @@
 import fastify from 'fastify';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
 import { ZodError } from 'zod';
 import { env } from './env';
 
-
 export const app = fastify();
 
-// app.register(toDoRoutes);
-
+app.register(fastifyStatic, {
+    root: path.join(__dirname, 'uploads'),
+    prefix: '/public/',
+});
 
 app.setErrorHandler((error, _request, reply)=> {
     if(error instanceof ZodError){
