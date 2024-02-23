@@ -19,90 +19,126 @@ describe('User Routes', ()=> {
         execSync('npx prisma migrate reset --force');
     });
 
-    test('Can create a new user', async () => {
+    describe('Create user and validate fields', () => {
 
-        const NewManUser = {
-            'username': 'yago.gomes',
-            'password': '123456',
-            'gender': 'men'
-        };
+        test('Can create a new user', async () => {
 
-        const responseCreateManUser = await request(app.server)
-            .post('/api/user/register')
-            .send(NewManUser)
-            .expect(201);
+            const NewManUser = {
+                'username': 'yago.gomes',
+                'password': '123456',
+                'gender': 'men'
+            };
 
-        const menObjectUser = responseCreateManUser.body.user;
+            const responseCreateManUser = await request(app.server)
+                .post('/api/user/register')
+                .send(NewManUser)
+                .expect(201);
 
-        expect(menObjectUser).toEqual(expect.objectContaining({
-            id: expect.any(String),
-            username: 'yago.gomes',
-            password: expect.any(String),
-            gender: 'men',
-            profileImage: '/public/default-profile-images/default-image-men.png'
-        }));
+            const menObjectUser = responseCreateManUser.body.user;
 
-        const NewWomanUser = {
-            'username': 'thais.nunes',
-            'password': '123456',
-            'gender': 'woman'
-        };
+            expect(menObjectUser).toEqual(expect.objectContaining({
+                id: expect.any(String),
+                username: 'yago.gomes',
+                password: expect.any(String),
+                gender: 'men',
+                profileImage: '/public/default-profile-images/default-image-men.png'
+            }));
 
-        const responseCreateWomanUser = await request(app.server)
-            .post('/api/user/register')
-            .send(NewWomanUser)
-            .expect(201);
+            const NewWomanUser = {
+                'username': 'thais.nunes',
+                'password': '123456',
+                'gender': 'woman'
+            };
 
-        const womanObjectUser = responseCreateWomanUser.body.user;
+            const responseCreateWomanUser = await request(app.server)
+                .post('/api/user/register')
+                .send(NewWomanUser)
+                .expect(201);
 
-        expect(womanObjectUser).toEqual(expect.objectContaining({
-            id: expect.any(String),
-            username: 'thais.nunes',
-            password: expect.any(String),
-            gender: 'woman',
-            profileImage: '/public/default-profile-images/default-image-woman.png'
-        }));
+            const womanObjectUser = responseCreateWomanUser.body.user;
 
+            expect(womanObjectUser).toEqual(expect.objectContaining({
+                id: expect.any(String),
+                username: 'thais.nunes',
+                password: expect.any(String),
+                gender: 'woman',
+                profileImage: '/public/default-profile-images/default-image-woman.png'
+            }));
+
+        });
+
+        test('User id must be uuid4', async () => {
+
+            const NewManUser = {
+                'username': 'yago.gomes',
+                'password': '123456',
+                'gender': 'men'
+            };
+
+            const responseCreateManUser = await request(app.server)
+                .post('/api/user/register')
+                .send(NewManUser)
+                .expect(201);
+
+            const menObjectUser = responseCreateManUser.body.user;
+
+            // regex to verify if is uuid4
+            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+            expect(uuidRegex.test(menObjectUser.id)).toBe(true);
+        });
+
+        test('User password must be hashed', async () => {
+
+            const NewManUser = {
+                'username': 'yago.gomes',
+                'password': '123456',
+                'gender': 'men'
+            };
+
+            const responseCreateManUser = await request(app.server)
+                .post('/api/user/register')
+                .send(NewManUser)
+                .expect(201);
+
+            const menObjectUser = responseCreateManUser.body.user;
+
+            // verify if password is hashed
+            const isMatch = await compare('123456', menObjectUser.password);
+            expect(isMatch).toBe(true);
+        });
     });
 
-    test('User id must be uuid4', async () => {
+    describe('Loggin user', () => {
+        test.only('User can loggin using username and password', async () => {
 
-        const NewManUser = {
-            'username': 'yago.gomes',
-            'password': '123456',
-            'gender': 'men'
-        };
+            const NewUser = {
+                'username': 'yago.gomes',
+                'password': '123456',
+                'gender': 'men'
+            };
 
-        const responseCreateManUser = await request(app.server)
-            .post('/api/user/register')
-            .send(NewManUser)
-            .expect(201);
+            await request(app.server)
+                .post('/api/user/register')
+                .send(NewUser)
+                .expect(201);
 
-        const menObjectUser = responseCreateManUser.body.user;
+            const userLogin = {
+                'username': 'yago.gomes',
+                'password': '123456',
+            };
 
-        // regex to verify if is uuid4
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        expect(uuidRegex.test(menObjectUser.id)).toBe(true);
+            const userLoginResponse = await request(app.server)
+                .post('/api/user/login')
+                .send(userLogin)
+                .expect(200);
+
+            const objectUser = userLoginResponse.body.user;
+
+            expect(objectUser).toEqual(expect.objectContaining({
+                id: expect.any(String),
+                username: 'yago.gomes',
+                profileImage: '/public/default-profile-images/default-image-men.png'
+            }));
+        });
     });
-
-    test('User password must be hashed', async () => {
-
-        const NewManUser = {
-            'username': 'yago.gomes',
-            'password': '123456',
-            'gender': 'men'
-        };
-
-        const responseCreateManUser = await request(app.server)
-            .post('/api/user/register')
-            .send(NewManUser)
-            .expect(201);
-
-        const menObjectUser = responseCreateManUser.body.user;
-
-        // verify if password is hashed
-        const isMatch = await compare('123456', menObjectUser.password);
-        expect(isMatch).toBe(true);
-    });
-
 });

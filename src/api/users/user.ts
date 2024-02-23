@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../../lib/prisma';
-import { hash } from 'bcryptjs';
+import { compare, hash } from 'bcryptjs';
 import { z } from 'zod';
 import { UsernameAlreadyExistsError } from '../../erros/username-already-exists';
 
@@ -53,5 +53,48 @@ export async function userRoutes(app: FastifyInstance){
             // user_id: new_user.id
             user: new_user
         });
+    });
+
+    app.post('/login', async (request, reply) => {
+
+        const userLoginSchema = z.object({
+            username: z.string(),
+            password: z.string()
+        });
+
+        const _body = userLoginSchema.safeParse(request.body);
+
+        if(_body.success == false){
+            const message = 'Invalid body';
+            console.error(message, _body.error.format());
+            return reply.status(400).send({message});
+        }
+
+        const {username, password} = _body.data;
+
+        const user = await prisma.user.findUnique({
+            where: {
+                username: username,
+            }
+        });
+
+        if(user && await compare(password, user.password)){
+            reply.status(200).send({
+                user: { 
+                    id: user.id, 
+                    username: user.username,
+                    profileImage: user.profileImage
+                }
+            });
+            
+        } 
+
+        return reply.status(400).send(
+            {
+                message: 'Validation error',
+                issues: 'Username os password are incorrect'
+            }
+        );
+
     });
 }
