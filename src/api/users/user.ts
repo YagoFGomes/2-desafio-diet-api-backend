@@ -97,4 +97,49 @@ export async function userRoutes(app: FastifyInstance){
         );
 
     });
+
+    app.get('/:id', async (request, reply) => {
+        const getTaskParamsSchema = z.object({
+            id: z.string().uuid()
+        });
+    
+        const validatedQuery = getTaskParamsSchema.safeParse(request.params);
+    
+        if (!validatedQuery.success) {
+            return reply.status(400).send(
+                {
+                    message: 'Request error',
+                    issues: 'Required parameters are incorrect'
+                }
+            );
+        }
+    
+        const { id: user_id } = validatedQuery.data;
+
+        const user = await prisma.user.findUnique({
+            where: {
+                id: user_id
+            }
+        });
+
+        if(!user){
+            return reply.status(400).send(
+                {
+                    message: 'Validation error',
+                    issues: 'User id are incorrect'
+                }
+            );
+        }
+
+        const { id, username, gender, profileImage } = user;
+    
+        reply.status(200).send({
+            user: {
+                id,
+                username,
+                gender,
+                profileImage
+            }
+        });
+    });
 }

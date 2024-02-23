@@ -109,7 +109,7 @@ describe('User Routes', ()=> {
     });
 
     describe('Loggin user', () => {
-        test.only('User can loggin using username and password', async () => {
+        test('User can loggin using username and password', async () => {
 
             const NewUser = {
                 'username': 'yago.gomes',
@@ -137,6 +137,35 @@ describe('User Routes', ()=> {
             expect(objectUser).toEqual(expect.objectContaining({
                 id: expect.any(String),
                 username: 'yago.gomes',
+                profileImage: '/public/default-profile-images/default-image-men.png'
+            }));
+        });
+    });
+
+    describe('Can get a user info', () => {
+        test('User can get a info using id', async () => {
+
+            const NewUser = {
+                'username': 'yago.gomes',
+                'password': '123456',
+                'gender': 'men'
+            };
+
+            const newUserResponse = await request(app.server)
+                .post('/api/user/register')
+                .send(NewUser)
+                .expect(201);
+
+            const userLoginResponse = await request(app.server)
+                .get(`/api/user/${newUserResponse.body.user.id}`)
+                .expect(200);
+
+            const objectUser = userLoginResponse.body.user;
+
+            expect(objectUser).toEqual(expect.objectContaining({
+                id: expect.any(String),
+                username: 'yago.gomes',
+                gender: 'men',
                 profileImage: '/public/default-profile-images/default-image-men.png'
             }));
         });
