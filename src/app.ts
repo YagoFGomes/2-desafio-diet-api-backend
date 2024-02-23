@@ -5,6 +5,7 @@ import { ZodError } from 'zod';
 import { env } from './env';
 import { userRoutes } from './api/users/user';
 import { UsernameAlreadyExistsError } from './erros/username-already-exists';
+import { userMeel } from './api/meels/meels';
 
 export const app = fastify();
 
@@ -14,6 +15,7 @@ app.register(fastifyStatic, {
 });
 
 app.register(userRoutes, { prefix: '/api/user' });
+app.register(userMeel, { prefix: '/api/meel' });
 
 app.setErrorHandler((error, _request, reply)=> {
     if(error instanceof ZodError){
