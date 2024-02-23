@@ -3,6 +3,9 @@ import { prisma } from '../../lib/prisma';
 import { compare, hash } from 'bcryptjs';
 import { z } from 'zod';
 import { UsernameAlreadyExistsError } from '../../erros/username-already-exists';
+import { RequiredParametersIncorrect } from '../../erros/required-parameters-incorrect';
+import { IncorectUserId } from '../../erros/incorect-user-id';
+import { IncorrectUsernameOrPassword } from '../../erros/username-or-password-incorect';
 
 export async function userRoutes(app: FastifyInstance){
     app.post('/register', async (request, reply) => {
@@ -50,7 +53,6 @@ export async function userRoutes(app: FastifyInstance){
         });
 
         return reply.status(201).send({
-            // user_id: new_user.id
             user: new_user
         });
     });
@@ -86,16 +88,9 @@ export async function userRoutes(app: FastifyInstance){
                     profileImage: user.profileImage
                 }
             });
-            
         } 
 
-        return reply.status(400).send(
-            {
-                message: 'Validation error',
-                issues: 'Username os password are incorrect'
-            }
-        );
-
+        throw new IncorrectUsernameOrPassword();
     });
 
     app.get('/:id', async (request, reply) => {
@@ -106,12 +101,7 @@ export async function userRoutes(app: FastifyInstance){
         const validatedQuery = getTaskParamsSchema.safeParse(request.params);
     
         if (!validatedQuery.success) {
-            return reply.status(400).send(
-                {
-                    message: 'Request error',
-                    issues: 'Required parameters are incorrect'
-                }
-            );
+            throw new RequiredParametersIncorrect();
         }
     
         const { id: user_id } = validatedQuery.data;
@@ -123,12 +113,7 @@ export async function userRoutes(app: FastifyInstance){
         });
 
         if(!user){
-            return reply.status(400).send(
-                {
-                    message: 'Validation error',
-                    issues: 'User id are incorrect'
-                }
-            );
+            throw new IncorectUserId();
         }
 
         const { id, username, gender, profileImage } = user;
