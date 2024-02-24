@@ -111,6 +111,7 @@ export async function userMeel(app: FastifyInstance){
             const bodySchema = z.object({
                 name: z.string(),
                 description: z.string(),
+                inDiet: z.boolean(),
                 mealHour: z.string()
             });
 
@@ -122,7 +123,7 @@ export async function userMeel(app: FastifyInstance){
             
     
             const { id } = _parameters.data;
-            const { name, description, mealHour } = _bodySchema.data;
+            const { name, description, mealHour, inDiet } = _bodySchema.data;
 
             try {
                 const existingTask = await prisma.meals.findUnique({ where: { id } });
@@ -139,6 +140,7 @@ export async function userMeel(app: FastifyInstance){
                     data: {
                         name, 
                         description,
+                        inDiet,
                         mealHour
                     }
                 });
