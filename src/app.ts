@@ -6,10 +6,11 @@ import { ZodError } from 'zod';
 import { env } from './env';
 import { userRoutes } from './api/users/user';
 import { UsernameAlreadyExistsError } from './erros/username-already-exists';
-import { userMeel } from './api/meels/meels';
+import { userMeelRoutes } from './api/meels/meels';
 import fastifyJWT from '@fastify/jwt';
 import fastifyCookie from '@fastify/cookie';
 import { RequiredParametersIncorrect } from './erros/required-parameters-incorrect';
+import { userMetricsRoutes } from './api/metrics/metrics';
 
 export const app = fastify();
 
@@ -55,7 +56,8 @@ app.register(fastifyStatic, {
 });
 
 app.register(userRoutes, { prefix: '/api/user' });
-app.register(userMeel, { prefix: '/api/meal' });
+app.register(userMeelRoutes, { prefix: '/api/meal' });
+app.register(userMetricsRoutes, { prefix: '/api/user/metrics' });
 
 app.setErrorHandler((error, _request, reply)=> {
     if(error instanceof ZodError){

@@ -4,7 +4,7 @@ import { RequiredParametersIncorrect } from '../../erros/required-parameters-inc
 import { prisma } from '../../lib/prisma';
 import { getUserIDFromToken } from '../../utils/validate-token';
 
-export async function userMeel(app: FastifyInstance){
+export async function userMeelRoutes(app: FastifyInstance){
     app.post('/create', async (request, reply) => {
         const jwt_token = request.cookies.session;
         
