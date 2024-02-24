@@ -9,6 +9,7 @@ import { UsernameAlreadyExistsError } from './erros/username-already-exists';
 import { userMeel } from './api/meels/meels';
 import fastifyJWT from '@fastify/jwt';
 import fastifyCookie from '@fastify/cookie';
+import { RequiredParametersIncorrect } from './erros/required-parameters-incorrect';
 
 export const app = fastify();
 
@@ -34,7 +35,6 @@ app.addHook('onRequest', async (request, reply) => {
     const routesToApplyHook = ['/api/user/login', '/api/user/register'];
 
     if (!routesToApplyHook.includes(request.routerPath)) {
-   
         try {
             const token = request.cookies.session;
             if(token){
@@ -46,7 +46,6 @@ app.addHook('onRequest', async (request, reply) => {
             console.log(err);
             reply.status(401).send();
         }
-        // Sua lógica de hook aqui
     }
 });
 
@@ -56,13 +55,16 @@ app.register(fastifyStatic, {
 });
 
 app.register(userRoutes, { prefix: '/api/user' });
-app.register(userMeel, { prefix: '/api/meel' });
+app.register(userMeel, { prefix: '/api/meal' });
 
 app.setErrorHandler((error, _request, reply)=> {
     if(error instanceof ZodError){
         return reply.status(400).send({message: 'Validation error', issues: error.format()});
     }
     if(error instanceof UsernameAlreadyExistsError){
+        return reply.status(400).send({message: 'Validation error', issues: error.message});
+    }
+    if(error instanceof RequiredParametersIncorrect){
         return reply.status(400).send({message: 'Validation error', issues: error.message});
     }
 
