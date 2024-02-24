@@ -14,7 +14,8 @@ export async function userMeel(app: FastifyInstance){
             const mealBodySchema = z.object({
                 name: z.string(),        
                 description: z.string(),
-                inDiet: z.boolean()
+                inDiet: z.boolean(),
+                mealHour: z.string()
             });
 
             const _body = mealBodySchema.safeParse(request.body);
@@ -23,13 +24,14 @@ export async function userMeel(app: FastifyInstance){
                 throw new RequiredParametersIncorrect();
             }
 
-            const {name, description, inDiet} = _body.data;
+            const {name, description, inDiet, mealHour} = _body.data;
 
             await prisma.meals.create({
                 data: {
                     name,
                     description,
                     inDiet,
+                    mealHour,
                     userId: id
                 }
             });
@@ -105,11 +107,11 @@ export async function userMeel(app: FastifyInstance){
             });
     
             const _parameters = parametersSchema.safeParse(request.params);
-          
 
             const bodySchema = z.object({
                 name: z.string(),
-                description: z.string()
+                description: z.string(),
+                mealHour: z.string()
             });
 
             const _bodySchema = bodySchema.safeParse(request.body);
@@ -120,7 +122,7 @@ export async function userMeel(app: FastifyInstance){
             
     
             const { id } = _parameters.data;
-            const { name, description } = _bodySchema.data;
+            const { name, description, mealHour } = _bodySchema.data;
 
             try {
                 const existingTask = await prisma.meals.findUnique({ where: { id } });
@@ -136,7 +138,8 @@ export async function userMeel(app: FastifyInstance){
                     },
                     data: {
                         name, 
-                        description 
+                        description,
+                        mealHour
                     }
                 });
 
