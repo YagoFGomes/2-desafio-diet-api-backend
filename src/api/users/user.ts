@@ -3,10 +3,9 @@ import { prisma } from '../../lib/prisma';
 import { compare, hash } from 'bcryptjs';
 import { z } from 'zod';
 import { UsernameAlreadyExistsError } from '../../erros/username-already-exists';
-// import { RequiredParametersIncorrect } from '../../erros/required-parameters-incorrect';
 import { IncorectUserId } from '../../erros/incorect-user-id';
 import { IncorrectUsernameOrPassword } from '../../erros/username-or-password-incorect';
-import { JwtPayload } from '../../types';
+import { getUserIDFromToken } from '../../utils/validate-token';
 
 export async function userRoutes(app: FastifyInstance){
     app.post('/register', async (request, reply) => {
@@ -125,9 +124,7 @@ export async function userRoutes(app: FastifyInstance){
         const jwt_token = request.cookies.session;
         
         if(jwt_token){
-            const jwt_decoded = app.jwt.decode(jwt_token);
-
-            const { id: user_id } = jwt_decoded as JwtPayload;
+            const user_id = await getUserIDFromToken(request, reply, jwt_token);
 
             const user = await prisma.user.findUnique({
                 where: {
