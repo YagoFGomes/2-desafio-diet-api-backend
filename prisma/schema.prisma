@@ -24,13 +24,18 @@ model User {
   password     String
   gender       Gender
   profileImage String
+
+  meals Meals[]
 }
 
 model Meals {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(uuid())
   name        String
   description String
   inDiet      Boolean  @map("in_diet")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
+
+  User   User?   @relation(fields: [userId], references: [id])
+  userId String?
 }
