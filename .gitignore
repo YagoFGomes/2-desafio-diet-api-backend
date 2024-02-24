@@ -14,3 +14,8 @@ annotations.md
 
 # Static Images
 src/uploads/profile-images/*
+
+
+# JWT keys
+private_key.pem
+public_key.pem

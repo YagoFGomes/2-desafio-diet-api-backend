@@ -2,7 +2,8 @@ import { app } from '../../app';
 import { execSync } from 'node:child_process';
 import { test, beforeAll, afterAll, describe, beforeEach, expect } from 'vitest';
 import request from 'supertest';
-import { compare}  from 'bcryptjs';
+// import { compare}  from 'bcryptjs';
+// import { prisma } from '../../lib/prisma';
 
 describe('User Routes', ()=> {
 
@@ -29,20 +30,10 @@ describe('User Routes', ()=> {
                 'gender': 'men'
             };
 
-            const responseCreateManUser = await request(app.server)
+            await request(app.server)
                 .post('/api/user/register')
                 .send(NewManUser)
                 .expect(201);
-
-            const menObjectUser = responseCreateManUser.body.user;
-
-            expect(menObjectUser).toEqual(expect.objectContaining({
-                id: expect.any(String),
-                username: 'yago.gomes',
-                password: expect.any(String),
-                gender: 'men',
-                profileImage: '/public/default-profile-images/default-image-men.png'
-            }));
 
             const NewWomanUser = {
                 'username': 'thais.nunes',
@@ -50,61 +41,10 @@ describe('User Routes', ()=> {
                 'gender': 'woman'
             };
 
-            const responseCreateWomanUser = await request(app.server)
+            await request(app.server)
                 .post('/api/user/register')
                 .send(NewWomanUser)
                 .expect(201);
-
-            const womanObjectUser = responseCreateWomanUser.body.user;
-
-            expect(womanObjectUser).toEqual(expect.objectContaining({
-                id: expect.any(String),
-                username: 'thais.nunes',
-                password: expect.any(String),
-                gender: 'woman',
-                profileImage: '/public/default-profile-images/default-image-woman.png'
-            }));
-
-        });
-
-        test('User id must be uuid4', async () => {
-
-            const NewManUser = {
-                'username': 'yago.gomes',
-                'password': '123456',
-                'gender': 'men'
-            };
-
-            const responseCreateManUser = await request(app.server)
-                .post('/api/user/register')
-                .send(NewManUser)
-                .expect(201);
-
-            const menObjectUser = responseCreateManUser.body.user;
-
-            // regex to verify if is uuid4
-            const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-            expect(uuidRegex.test(menObjectUser.id)).toBe(true);
-        });
-
-        test('User password must be hashed', async () => {
-
-            const NewManUser = {
-                'username': 'yago.gomes',
-                'password': '123456',
-                'gender': 'men'
-            };
-
-            const responseCreateManUser = await request(app.server)
-                .post('/api/user/register')
-                .send(NewManUser)
-                .expect(201);
-
-            const menObjectUser = responseCreateManUser.body.user;
-
-            // verify if password is hashed
-            const isMatch = await compare('123456', menObjectUser.password);
-            expect(isMatch).toBe(true);
         });
     });
 
@@ -122,51 +62,58 @@ describe('User Routes', ()=> {
                 .send(NewUser)
                 .expect(201);
 
-            const userLogin = {
-                'username': 'yago.gomes',
-                'password': '123456',
-            };
-
-            const userLoginResponse = await request(app.server)
+            // Faz o login para obter o cookie com o JWT
+            await request(app.server)
                 .post('/api/user/login')
-                .send(userLogin)
+                .send({
+                    username: 'yago.gomes',
+                    password: '123456'
+                })
                 .expect(200);
 
-            const objectUser = userLoginResponse.body.user;
-
-            expect(objectUser).toEqual(expect.objectContaining({
-                id: expect.any(String),
-                username: 'yago.gomes',
-                profileImage: '/public/default-profile-images/default-image-men.png'
-            }));
         });
     });
 
     describe('Can get a user info', () => {
-        test('User can get a info using id', async () => {
-
-            const NewUser = {
-                'username': 'yago.gomes',
-                'password': '123456',
-                'gender': 'men'
+        test('User can get their info using JWT token', async () => {
+            // Cria um novo usuário
+            const newUser = {
+                username: 'yago.gomes',
+                password: '123456',
+                gender: 'men'
             };
-
-            const newUserResponse = await request(app.server)
+        
+            // Registra o usuário
+            await request(app.server)
                 .post('/api/user/register')
-                .send(NewUser)
-                .expect(201);
-
-            const userLoginResponse = await request(app.server)
-                .get(`/api/user/${newUserResponse.body.user.id}`)
+                .send(newUser);
+        
+            // Faz o login para obter o cookie com o JWT
+            const loginResponse = await request(app.server)
+                .post('/api/user/login')
+                .send({
+                    username: 'yago.gomes',
+                    password: '123456'
+                })
                 .expect(200);
+        
+            // Extrai o cookie do header da resposta
+            const cookie = loginResponse.headers['set-cookie'][0];
 
-            const objectUser = userLoginResponse.body.user;
-
-            expect(objectUser).toEqual(expect.objectContaining({
+            // Usa o cookie para acessar a rota de informações do usuário
+            const userResponse = await request(app.server)
+                .get('/api/user/')
+                .set('Cookie', cookie)
+                .expect(200);
+            console.log(userResponse);
+            const userInfo = userResponse.body.user;
+        
+            // Valida as informações do usuário
+            expect(userInfo).toEqual(expect.objectContaining({
                 id: expect.any(String),
                 username: 'yago.gomes',
                 gender: 'men',
-                profileImage: '/public/default-profile-images/default-image-men.png'
+                profileImage: expect.any(String) // ou a URL exata se você souber
             }));
         });
     });

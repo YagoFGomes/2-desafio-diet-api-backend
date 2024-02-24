@@ -3,9 +3,10 @@ import { prisma } from '../../lib/prisma';
 import { compare, hash } from 'bcryptjs';
 import { z } from 'zod';
 import { UsernameAlreadyExistsError } from '../../erros/username-already-exists';
-import { RequiredParametersIncorrect } from '../../erros/required-parameters-incorrect';
+// import { RequiredParametersIncorrect } from '../../erros/required-parameters-incorrect';
 import { IncorectUserId } from '../../erros/incorect-user-id';
 import { IncorrectUsernameOrPassword } from '../../erros/username-or-password-incorect';
+import { JwtPayload } from '../../types';
 
 export async function userRoutes(app: FastifyInstance){
     app.post('/register', async (request, reply) => {
@@ -43,7 +44,7 @@ export async function userRoutes(app: FastifyInstance){
             profileImage = '/public/default-profile-images/default-image-woman.png';
         }
 
-        const new_user = await prisma.user.create({
+        await prisma.user.create({
             data: {
                 username,
                 password: password_hash,   
@@ -52,9 +53,7 @@ export async function userRoutes(app: FastifyInstance){
             }
         });
 
-        return reply.status(201).send({
-            user: new_user
-        });
+        return reply.status(201).send();
     });
 
     app.post('/login', async (request, reply) => {
@@ -81,6 +80,20 @@ export async function userRoutes(app: FastifyInstance){
         });
 
         if(user && await compare(password, user.password)){
+
+            const token = app.jwt.sign({ id: user.id, username: user.username });
+
+            // Adicionar 7 dias à data atual
+            const expirationDate = new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000);
+
+            reply.setCookie('session', token, {
+                path: '/',
+                httpOnly: true,  // Importante para garantir que o cookie seja server-side only
+                secure: true,    // Recomendado para produção (requer HTTPS)
+                sameSite: 'strict', // Ajuda a prevenir ataques CSRF
+                expires: expirationDate // Data atual + 7 dias
+            });
+
             reply.status(200).send({
                 user: { 
                     id: user.id, 
@@ -90,41 +103,54 @@ export async function userRoutes(app: FastifyInstance){
             });
         } 
 
-        throw new IncorrectUsernameOrPassword();
+        else {   
+            throw new IncorrectUsernameOrPassword();
+        }
     });
 
-    app.get('/:id', async (request, reply) => {
-        const getTaskParamsSchema = z.object({
-            id: z.string().uuid()
+    app.post('/logout', async (request, reply) => {
+        // Apagar o cookie JWT
+        reply.clearCookie('session', {
+            path: '/',
+            httpOnly: true,
+            secure: true,    // Recomendado para produção (requer HTTPS)
+            sameSite: 'strict' // Ajuda a prevenir ataques CSRF
         });
     
-        const validatedQuery = getTaskParamsSchema.safeParse(request.params);
-    
-        if (!validatedQuery.success) {
-            throw new RequiredParametersIncorrect();
-        }
-    
-        const { id: user_id } = validatedQuery.data;
+        reply.send({ message: 'Logout successfuly' });
+    });
 
-        const user = await prisma.user.findUnique({
-            where: {
-                id: user_id
+    // /api/users/
+    app.get('/', async (request, reply) => {
+        const jwt_token = request.cookies.session;
+        
+        if(jwt_token){
+            const jwt_decoded = app.jwt.decode(jwt_token);
+
+            const { id: user_id } = jwt_decoded as JwtPayload;
+
+            const user = await prisma.user.findUnique({
+                where: {
+                    id: user_id
+                }
+            });
+            
+            if(!user){
+                throw new IncorectUserId();
             }
-        });
-
-        if(!user){
-            throw new IncorectUserId();
+            
+            const { id, username, gender, profileImage } = user;
+            
+            reply.status(200).send({
+                user: {
+                    id,
+                    username,
+                    gender,
+                    profileImage
+                }
+            });
+        } else {
+            throw new Error('Validation error');
         }
-
-        const { id, username, gender, profileImage } = user;
-    
-        reply.status(200).send({
-            user: {
-                id,
-                username,
-                gender,
-                profileImage
-            }
-        });
     });
 }
