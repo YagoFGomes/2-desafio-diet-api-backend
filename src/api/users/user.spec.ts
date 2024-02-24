@@ -105,7 +105,6 @@ describe('User Routes', ()=> {
                 .get('/api/user/')
                 .set('Cookie', cookie)
                 .expect(200);
-            console.log(userResponse);
             const userInfo = userResponse.body.user;
         
             // Valida as informações do usuário
@@ -115,6 +114,49 @@ describe('User Routes', ()=> {
                 gender: 'men',
                 profileImage: expect.any(String) // ou a URL exata se você souber
             }));
+        });
+    });
+
+    describe('User can logout', ()=> {
+        test('User can logout and cookie is cleared', async () => {
+            // Cria um novo usuário
+            const newUser = {
+                username: 'yago.gomes',
+                password: '123456',
+                gender: 'men'
+            };
+        
+            // Registra o usuário
+            await request(app.server)
+                .post('/api/user/register')
+                .send(newUser);
+        
+            // Faz o login para obter o cookie com o JWT
+            const loginResponse = await request(app.server)
+                .post('/api/user/login')
+                .send({
+                    username: 'yago.gomes',
+                    password: '123456'
+                });
+        
+            // Extrai o cookie do header da resposta
+            const cookie = loginResponse.headers['set-cookie'];
+        
+            // Faz a requisição de logout
+            const logoutResponse = await request(app.server)
+                .post('/api/user/logout')
+                .set('Cookie', cookie)
+                .expect(200);
+        
+            // Verifica se o cookie foi removido
+            expect(logoutResponse.headers['set-cookie']).toEqual(
+                expect.arrayContaining([
+                    expect.stringContaining('session=;')
+                ])
+            );
+        
+            // Verifica a mensagem de resposta
+            expect(logoutResponse.body.message).toBe('Logout successfuly');
         });
     });
 });
