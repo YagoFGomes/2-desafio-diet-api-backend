@@ -2,8 +2,6 @@ import { app } from '../../app';
 import { execSync } from 'node:child_process';
 import { test, beforeAll, afterAll, describe, beforeEach, expect } from 'vitest';
 import request from 'supertest';
-// import { compare}  from 'bcryptjs';
-// import { prisma } from '../../lib/prisma';
 
 describe('User Routes', ()=> {
 
