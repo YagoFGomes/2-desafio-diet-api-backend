@@ -94,6 +94,64 @@ export async function userMeel(app: FastifyInstance){
         } 
     });
 
+    app.patch('/:id', async (request, reply) => {
+        const jwt_token = request.cookies.session;
+        
+        if(jwt_token){
+            const user_id = await getUserIDFromToken(request, reply, jwt_token);
+
+            const parametersSchema = z.object({
+                id: z.string().uuid(),
+            });
+    
+            const _parameters = parametersSchema.safeParse(request.params);
+          
+
+            const bodySchema = z.object({
+                name: z.string(),
+                description: z.string()
+            });
+
+            const _bodySchema = bodySchema.safeParse(request.body);
+    
+            if(_parameters.success == false || _bodySchema.success == false ){
+                throw new RequiredParametersIncorrect();
+            }
+            
+    
+            const { id } = _parameters.data;
+            const { name, description } = _bodySchema.data;
+
+            try {
+                const existingTask = await prisma.meals.findUnique({ where: { id } });
+
+                if (!existingTask) {
+                    return reply.status(404).send();
+                }
+
+                const meal = await prisma.meals.update({
+                    where: { 
+                        id,
+                        userId: user_id
+                    },
+                    data: {
+                        name, 
+                        description 
+                    }
+                });
+
+                if(meal == null){
+                    return reply.status(404).send();
+                }
+
+                reply.status(200).send({ meal });
+
+            } catch (err){
+                return reply.status(404).send();
+            }
+        } 
+    });
+
     app.delete('/:id', async (request, reply) => {
         const jwt_token = request.cookies.session;
         
