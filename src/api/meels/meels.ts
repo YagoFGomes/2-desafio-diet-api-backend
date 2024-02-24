@@ -73,15 +73,58 @@ export async function userMeel(app: FastifyInstance){
             }
     
             const { id } = _parameters.data;
-        
-            const meal = await prisma.meals.findUnique({
-                where: {
-                    id,
-                    userId: user_id
-                }
-            });
 
-            reply.status(200).send({ meal });
+            try {
+                const meal = await prisma.meals.findUnique({
+                    where: {
+                        id,
+                        userId: user_id
+                    }
+                });
+
+                if(meal == null){
+                    return reply.status(404).send();
+                }
+
+                reply.status(200).send({ meal });
+
+            } catch (err){
+                return reply.status(404).send();
+            }
+        } 
+    });
+
+    app.delete('/:id', async (request, reply) => {
+        const jwt_token = request.cookies.session;
+        
+        if(jwt_token){
+            const user_id = await getUserIDFromToken(request, reply, jwt_token);
+
+            const parametersSchema = z.object({
+                id: z.string().uuid()
+            });
+    
+            const _parameters = parametersSchema.safeParse(request.params);
+    
+            if(_parameters.success == false ){
+                throw new RequiredParametersIncorrect();
+            }
+    
+            const { id } = _parameters.data;
+
+            try {
+                await prisma.meals.delete({
+                    where: {
+                        id,
+                        userId: user_id
+                    }
+                });
+
+            } catch (err){
+                return reply.status(404).send();
+            }
+
+            reply.status(200).send();
         } 
     });
 } 
