@@ -57,30 +57,31 @@ export async function userMeel(app: FastifyInstance){
     });
 
     app.get('/:id', async (request, reply) => {
-        const parametersSchema = z.object({
-            id: z.string().uuid()
-        });
-
-        const _parameters = parametersSchema.safeParse(request.params);
-
-        if(_parameters.success == false ){
-            throw new RequiredParametersIncorrect();
-        }
-
         const jwt_token = request.cookies.session;
         
         if(jwt_token){
-            const id = await getUserIDFromToken(request, reply, jwt_token);
+            const user_id = await getUserIDFromToken(request, reply, jwt_token);
+
+            const parametersSchema = z.object({
+                id: z.string().uuid()
+            });
+    
+            const _parameters = parametersSchema.safeParse(request.params);
+    
+            if(_parameters.success == false ){
+                throw new RequiredParametersIncorrect();
+            }
+    
+            const { id } = _parameters.data;
         
-            const all_meals = await prisma.meals.findMany({
+            const meal = await prisma.meals.findUnique({
                 where: {
-                    userId: id
+                    id,
+                    userId: user_id
                 }
             });
 
-            reply.status(200).send({
-                meals: all_meals
-            });
+            reply.status(200).send({ meal });
         } 
     });
 } 
