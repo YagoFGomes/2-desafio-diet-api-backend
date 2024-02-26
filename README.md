@@ -1,1 +1,1 @@
-# Diet Api is a Rocketseat challenge 🚀
+# Diet Api is a Rocketseat challenge! 🚀
